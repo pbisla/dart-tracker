@@ -295,7 +295,8 @@ export function Sidebar({
           live DART tracking, a journey planner, or an official DART product.
         </p>
         <p className="note-small">
-          Silver Line opened in October 2025. Schematic geometry is illustrative, not to scale.
+          Silver Line opened in October 2025. Schematic geometry is illustrative, not to scale. The
+          Streets view uses OpenStreetMap road data.
         </p>
       </section>
     </aside>

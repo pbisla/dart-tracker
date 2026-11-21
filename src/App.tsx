@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ClockControls } from './components/ClockControls'
 import type { ClockControlsProps } from './components/ClockControls'
+import { GeoMap } from './components/GeoMap'
 import { Sidebar } from './components/Sidebar'
 import { TransitMap } from './components/TransitMap'
 import { useVelocityMotion } from './hooks/useVelocityMotion'
@@ -27,6 +28,7 @@ export default function App() {
   const [visibleLines, setVisibleLines] = useState<Record<LineId, boolean>>(initialVisibility)
   const [selectedStationId, setSelectedStationId] = useState<string | null>('akard')
   const [focusedTrainKey, setFocusedTrainKey] = useState<string | null>(null)
+  const [mapMode, setMapMode] = useState<'schematic' | 'streets'>('schematic')
   const [scheduleLineId, setScheduleLineId] = useState<LineId | null>(null)
 
   useEffect(() => {
@@ -170,14 +172,51 @@ export default function App() {
 
       <main className="layout">
         <section className="map-card" aria-label="Rail map">
-          <TransitMap
-            visibleLines={visibleLines}
-            trains={renderTrains}
-            selectedStationId={selectedStationId}
-            onSelectStation={selectStation}
-            selectedTrainKey={focusedTrainKey}
-            onSelectTrain={setFocusedTrainKey}
-          />
+          <div className="map-toolbar">
+            <div className="segmented map-mode" role="group" aria-label="Map style">
+              <button
+                type="button"
+                className={mapMode === 'schematic' ? 'segment segment-active' : 'segment'}
+                aria-pressed={mapMode === 'schematic'}
+                onClick={() => setMapMode('schematic')}
+              >
+                Schematic
+              </button>
+              <button
+                type="button"
+                className={mapMode === 'streets' ? 'segment segment-active' : 'segment'}
+                aria-pressed={mapMode === 'streets'}
+                onClick={() => setMapMode('streets')}
+              >
+                Streets
+              </button>
+            </div>
+            <span className="map-toolbar-note">
+              {mapMode === 'schematic'
+                ? 'Traditional transit diagram'
+                : 'OpenStreetMap road view'}
+            </span>
+          </div>
+
+          {mapMode === 'schematic' ? (
+            <TransitMap
+              visibleLines={visibleLines}
+              trains={renderTrains}
+              selectedStationId={selectedStationId}
+              onSelectStation={selectStation}
+              selectedTrainKey={focusedTrainKey}
+              onSelectTrain={setFocusedTrainKey}
+            />
+          ) : (
+            <GeoMap
+              visibleLines={visibleLines}
+              trains={renderTrains}
+              selectedStationId={selectedStationId}
+              onSelectStation={selectStation}
+              selectedTrainKey={focusedTrainKey}
+              onSelectTrain={setFocusedTrainKey}
+            />
+          )}
         </section>
 
         <Sidebar

@@ -37,7 +37,8 @@ The build output in `dist/` is plain static HTML/CSS/JS. Vite is configured with
 - Scrub the time of day, change speed, pause, and toggle weekday/weekend service.
 - Show/hide individual lines.
 - Click a station to see the next simulated arrivals and a timetable grouped by direction.
-- Shared corridors are drawn as side-by-side parallel tracks.
+- Switch between **Schematic** and **Streets** views; Streets uses OpenStreetMap road tiles.
+- Shared corridors are drawn as side-by-side parallel tracks in the schematic view.
 - Scroll to zoom and drag to pan the map; use **Reset view** to return to the full system.
 
 ## Data and assumptions
@@ -56,6 +57,7 @@ Sources used for reference:
 - <https://en.wikipedia.org/wiki/DART_Light_Rail>
 - <https://en.wikipedia.org/wiki/Silver_Line_(DART)>
 - Individual DART line articles on Wikipedia
+- Station coordinates from OpenStreetMap via the Overpass API; road tiles © OpenStreetMap contributors
 
 ## Project layout
 

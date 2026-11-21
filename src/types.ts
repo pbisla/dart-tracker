@@ -7,7 +7,12 @@ export interface Point {
   y: number
 }
 
-export interface Station extends Point {
+export interface LatLng {
+  lat: number
+  lng: number
+}
+
+export interface Station extends Point, LatLng {
   id: string
   name: string
   label: LabelAnchor
