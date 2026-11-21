@@ -480,6 +480,38 @@ button {
   border-color: #94a3b8;
 }
 
+.map-zoom {
+  position: absolute;
+  right: 14px;
+  bottom: 54px;
+  z-index: 2;
+  display: grid;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
+}
+
+.map-zoom button {
+  width: 34px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.map-zoom button + button {
+  border-top: 1px solid #e2e8f0;
+}
+
+.map-zoom button:hover {
+  background: #f1f5f9;
+}
+
 .sidebar {
   display: flex;
   flex-direction: column;

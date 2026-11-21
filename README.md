@@ -39,7 +39,7 @@ The build output in `dist/` is plain static HTML/CSS/JS. Vite is configured with
 - Click a station to see the next simulated arrivals and a timetable grouped by direction.
 - Switch between **Schematic** and **Streets** views; Streets uses OpenStreetMap road tiles.
 - Shared corridors are drawn as side-by-side parallel tracks in the schematic view.
-- Scroll to zoom and drag to pan the map; use **Reset view** to return to the full system.
+- Scroll or pinch to zoom and drag to pan the map; **+ / −** buttons are available on touch devices. Use **Reset view** to return to the full system.
 
 ## Data and assumptions
 

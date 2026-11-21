@@ -22,7 +22,22 @@ interface ViewState {
   ty: number
 }
 
+type GestureState =
+  | { mode: 'pan'; lastPoint: Point }
+  | { mode: 'pinch'; startDistance: number; startScale: number; anchorLayer: Point }
+
 const INITIAL_VIEW: ViewState = { scale: 1, tx: 0, ty: 0 }
+const MIN_SCALE = 0.6
+const MAX_SCALE = 4
+
+const clampScale = (value: number) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, value))
+
+function getPinch(a: Point, b: Point) {
+  return {
+    midpoint: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+    distance: Math.hypot(a.x - b.x, a.y - b.y),
+  }
+}
 
 const LINE_PATHS = Object.fromEntries(
   LINES.map((line) => [line.id, buildRoundedPath(getLinePoints(line.id), 24)]),
@@ -37,10 +52,16 @@ export function TransitMap({
   onSelectTrain,
 }: TransitMapProps) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const dragRef = useRef<{ start: Point; tx: number; ty: number } | null>(null)
+  const pointersRef = useRef(new Map<number, Point>())
+  const gestureRef = useRef<GestureState | null>(null)
   const suppressClickRef = useRef(false)
   const [view, setView] = useState<ViewState>(INITIAL_VIEW)
+  const viewRef = useRef(view)
   const [dragging, setDragging] = useState(false)
+
+  useEffect(() => {
+    viewRef.current = view
+  }, [view])
   const selectedTrain = trains.find((train) => trainKey(train) === selectedTrainKey)
   const nextStationId = selectedTrain?.nextStationId
   const nextStationColor = selectedTrain ? LINE_BY_ID[selectedTrain.lineId].color : undefined
@@ -66,7 +87,7 @@ export function TransitMap({
       const anchor = svgPoint(event.clientX, event.clientY)
       setView((current) => {
         const factor = Math.exp(-event.deltaY * 0.0015)
-        const nextScale = Math.max(0.6, Math.min(4, current.scale * factor))
+        const nextScale = clampScale(current.scale * factor)
         const ratio = nextScale / current.scale
         return {
           scale: nextScale,
@@ -80,38 +101,116 @@ export function TransitMap({
     return () => svg.removeEventListener('wheel', handleWheel)
   }, [])
 
+  const makePinchGesture = (points: Point[]): GestureState => {
+    const { midpoint, distance } = getPinch(points[0], points[1])
+    const current = viewRef.current
+    return {
+      mode: 'pinch',
+      startDistance: Math.max(distance, 1),
+      startScale: current.scale,
+      anchorLayer: {
+        x: (midpoint.x - current.tx) / current.scale,
+        y: (midpoint.y - current.ty) / current.scale,
+      },
+    }
+  }
+
   const handlePointerDown = (event: PointerEvent<SVGSVGElement>) => {
-    if (event.button !== 0) return
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    // Let stations and trains receive their own click events; capturing a
+    // background pointer would retarget the click to the SVG.
+    if (
+      pointersRef.current.size === 0 &&
+      (event.target as Element).closest('.station, .train')
+    ) {
+      return
+    }
+
     suppressClickRef.current = false
-    // Let stations and trains receive their own click events; capturing the
-    // pointer on the SVG would retarget the click to the background.
-    if ((event.target as Element).closest('.station, .train')) return
-    const start = svgPoint(event.clientX, event.clientY)
-    dragRef.current = { start, tx: view.tx, ty: view.ty }
+    const point = svgPoint(event.clientX, event.clientY)
+    pointersRef.current.set(event.pointerId, point)
     setDragging(true)
     try {
       event.currentTarget.setPointerCapture(event.pointerId)
     } catch {
-      // Synthetic or already-released pointers cannot be captured; panning still works.
+      // Synthetic or already-released pointers cannot be captured; gestures still work.
     }
+
+    const points = [...pointersRef.current.values()]
+    gestureRef.current =
+      points.length >= 2 ? makePinchGesture(points) : { mode: 'pan', lastPoint: point }
+    if (points.length >= 2) suppressClickRef.current = true
   }
 
   const handlePointerMove = (event: PointerEvent<SVGSVGElement>) => {
-    const drag = dragRef.current
-    if (!drag) return
-    const current = svgPoint(event.clientX, event.clientY)
-    const dx = current.x - drag.start.x
-    const dy = current.y - drag.start.y
-    if (Math.hypot(dx, dy) > 4) suppressClickRef.current = true
-    setView((previous) => ({ ...previous, tx: drag.tx + dx, ty: drag.ty + dy }))
+    if (!pointersRef.current.has(event.pointerId)) return
+    const point = svgPoint(event.clientX, event.clientY)
+    pointersRef.current.set(event.pointerId, point)
+
+    const gesture = gestureRef.current
+    if (!gesture) return
+    const points = [...pointersRef.current.values()]
+
+    if (gesture.mode === 'pan' && points.length === 1) {
+      const dx = point.x - gesture.lastPoint.x
+      const dy = point.y - gesture.lastPoint.y
+      if (Math.hypot(dx, dy) > 3) suppressClickRef.current = true
+      setView((previous) => ({ ...previous, tx: previous.tx + dx, ty: previous.ty + dy }))
+      gesture.lastPoint = point
+      return
+    }
+
+    if (points.length < 2) return
+    if (gesture.mode === 'pan') {
+      gestureRef.current = makePinchGesture(points)
+      suppressClickRef.current = true
+      return
+    }
+
+    const { midpoint, distance } = getPinch(points[0], points[1])
+    const nextScale = clampScale((gesture.startScale * distance) / gesture.startDistance)
+    setView({
+      scale: nextScale,
+      tx: midpoint.x - gesture.anchorLayer.x * nextScale,
+      ty: midpoint.y - gesture.anchorLayer.y * nextScale,
+    })
+    suppressClickRef.current = true
   }
 
   const handlePointerUp = (event: PointerEvent<SVGSVGElement>) => {
-    dragRef.current = null
-    setDragging(false)
+    pointersRef.current.delete(event.pointerId)
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
+
+    const remaining = [...pointersRef.current.values()]
+    if (remaining.length >= 2) {
+      gestureRef.current = makePinchGesture(remaining)
+    } else if (remaining.length === 1) {
+      gestureRef.current = { mode: 'pan', lastPoint: remaining[0] }
+    } else {
+      gestureRef.current = null
+      setDragging(false)
+      // Let the click generated by a pan/pinch be ignored, then re-enable taps.
+      if (suppressClickRef.current) {
+        window.setTimeout(() => {
+          suppressClickRef.current = false
+        }, 0)
+      }
+    }
+  }
+
+  const zoomBy = (factor: number) => {
+    setView((current) => {
+      const nextScale = clampScale(current.scale * factor)
+      const ratio = nextScale / current.scale
+      const anchor = { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 }
+      return {
+        scale: nextScale,
+        tx: anchor.x - (anchor.x - current.tx) * ratio,
+        ty: anchor.y - (anchor.y - current.ty) * ratio,
+      }
+    })
   }
 
   const handleStationActivate = (stationId: string) => {
@@ -346,7 +445,15 @@ export function TransitMap({
         </g>
       </svg>
 
-      <div className="map-hint">Scroll to zoom · Drag to pan · Click a train or station</div>
+      <div className="map-hint">Pinch or scroll to zoom · Drag to pan · Tap a train or station</div>
+      <div className="map-zoom" role="group" aria-label="Map zoom">
+        <button type="button" onClick={() => zoomBy(1.25)} aria-label="Zoom in">
+          +
+        </button>
+        <button type="button" onClick={() => zoomBy(0.8)} aria-label="Zoom out">
+          −
+        </button>
+      </div>
       <button
         type="button"
         className="map-reset"
