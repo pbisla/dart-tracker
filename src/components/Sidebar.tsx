@@ -40,7 +40,7 @@ export function Sidebar({
         <div className="panel-heading">
           <div>
             <h2 id="tracker-heading">Current position</h2>
-            <p>Advances from its current position by route speed and direction. Click a train to follow it.</p>
+            <p>Moves between scheduled stops. Click a train to follow it.</p>
           </div>
           <span className="tracker-live" aria-hidden="true" />
         </div>
@@ -119,7 +119,7 @@ export function Sidebar({
             <h2 id="station-heading">Next trains</h2>
             <p>
               {station
-                ? 'Illustrative arrivals at the selected stop, split by direction.'
+                ? 'Scheduled arrivals at the selected stop, split by direction.'
                 : 'Select a station on the map.'}
             </p>
           </div>
@@ -203,7 +203,7 @@ export function Sidebar({
             )}
           </>
         ) : (
-          <p className="empty-note">Choose any station to see simulated departures.</p>
+          <p className="empty-note">Choose any station to see scheduled departures.</p>
         )}
       </section>
 
@@ -290,9 +290,9 @@ export function Sidebar({
       <section className="panel note-panel">
         <h2>About this map</h2>
         <p>
-          Routes, station names and service windows are static, best-effort reference data. Train
-          positions and arrival times are calculated from the clock — this is <strong>not</strong>{' '}
-          live DART tracking, a journey planner, or an official DART product.
+          Arrival times and service spans come from DART's static GTFS timetable. Train positions
+          interpolate between those scheduled stops — this is <strong>not</strong> live DART tracking,
+          a journey planner, or an official DART product.
         </p>
         <p className="note-small">
           Silver Line opened in October 2025. Schematic geometry is illustrative, not to scale. The

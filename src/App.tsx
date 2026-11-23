@@ -237,10 +237,10 @@ export default function App() {
 
       <footer className="footer">
         <span>
-          Train positions are derived from static timetables and the clock. Arrival times are
-          illustrative, not navigation-grade.
+          Train positions interpolate between DART GTFS scheduled stops. Not live tracking or
+          navigation-grade data.
         </span>
-        <span>Station data: DART system map / public route references (best-effort snapshot).</span>
+        <span>Schedules: DART static GTFS (mdb-152). Schematic layout is hand-authored.</span>
       </footer>
     </div>
   )

@@ -91,6 +91,7 @@ const rows: Row[] = [
 
   // Red — south-west branch
   ['union-station', 'Union Station', 680, 800, 'bottom', 32.7760501, -96.8081640],
+  ['convention-center', 'Convention Center', 660, 820, 'right', 32.7724810, -96.8029920],
   ['cedars', 'Cedars', 640, 840, 'left', 32.7687679, -96.7935810],
   ['8th-corinth', '8th & Corinth', 600, 880, 'left', 32.7481411, -96.7983829],
   ['dallas-zoo', 'Dallas Zoo', 560, 920, 'left', 32.7406773, -96.8130144],

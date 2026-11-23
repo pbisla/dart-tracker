@@ -31,33 +31,6 @@ export interface Line {
 
 export type DayKind = 'weekday' | 'weekend'
 
-export interface HeadwayBand {
-  /** Start hour, e.g. 5 for 05:00. */
-  from: number
-  /** End hour (exclusive), e.g. 9 for 09:00. */
-  to: number
-  minutes: number
-}
-
-export interface ServiceWindow {
-  /** Minutes since midnight, may be less than `start` for overnight service. */
-  start: number
-  /** Minutes since midnight on the following day (e.g. 25 * 60 = 01:00). */
-  end: number
-  headways: HeadwayBand[]
-}
-
-export interface ServicePattern {
-  id: string
-  lineId: LineId
-  label: string
-  stationIds: string[]
-  /** Estimated end-to-end run time in minutes. */
-  totalMinutes: number
-  weekday: ServiceWindow
-  weekend: ServiceWindow
-}
-
 export interface Train {
   id: string
   lineId: LineId
@@ -76,4 +49,8 @@ export interface Train {
   segmentFraction: number
   etaMinutes: number
   destination: string
+  /** Duration of this scheduled trip, in minutes. */
+  runMinutes: number
+  /** Stations this scheduled trip serves, in travel order. */
+  stationIds: string[]
 }

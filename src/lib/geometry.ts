@@ -93,6 +93,15 @@ export function getLinePoints(lineId: LineId): Point[] {
   )
 }
 
+/** Geometry for one timetabled trip, which may follow a branch of its line. */
+export function getPatternPoints(lineId: LineId, stationIds: string[], direction: 1 | -1): Point[] {
+  const offset = LINE_BY_ID[lineId].offset * (direction === 1 ? 1 : -1)
+  return offsetPolyline(
+    stationIds.map((id) => STATION_BY_ID[id]).filter(Boolean),
+    offset,
+  )
+}
+
 export function reversePoints(points: Point[]): Point[] {
   return [...points].reverse()
 }
@@ -118,12 +127,14 @@ export function getCachedGeometry(key: string, points: Point[]): LineGeometry {
 
 export interface PositionOnLine extends Point {
   angle: number
+  /** Fraction of the full polyline travelled. */
+  progress: number
 }
 
 export function pointAtDistance(geometry: LineGeometry, distance: number): PositionOnLine {
   const { points, cumulative, total } = geometry
-  if (points.length === 0) return { x: 0, y: 0, angle: 0 }
-  if (points.length === 1 || total === 0) return { ...points[0], angle: 0 }
+  if (points.length === 0) return { x: 0, y: 0, angle: 0, progress: 0 }
+  if (points.length === 1 || total === 0) return { ...points[0], angle: 0, progress: 0 }
 
   const clamped = Math.max(0, Math.min(total, distance))
   let segment = 0
@@ -135,9 +146,23 @@ export function pointAtDistance(geometry: LineGeometry, distance: number): Posit
   const ratio = segmentLength === 0 ? 0 : (clamped - cumulative[segment]) / segmentLength
   const angle = (Math.atan2(end.y - start.y, end.x - start.x) * 180) / Math.PI
 
+  const distanceAlong = cumulative[segment] + segmentLength * ratio
   return {
     x: start.x + (end.x - start.x) * ratio,
     y: start.y + (end.y - start.y) * ratio,
     angle,
+    progress: total === 0 ? 0 : distanceAlong / total,
   }
+}
+
+/** Position between two station nodes of a polyline, using timetable progress. */
+export function pointBetweenStations(
+  geometry: LineGeometry,
+  fromIndex: number,
+  toIndex: number,
+  fraction: number,
+): PositionOnLine {
+  const from = geometry.cumulative[fromIndex] ?? 0
+  const to = geometry.cumulative[toIndex] ?? geometry.total
+  return pointAtDistance(geometry, from + (to - from) * fraction)
 }

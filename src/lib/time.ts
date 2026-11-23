@@ -1,4 +1,4 @@
-import type { DayKind, HeadwayBand, ServiceWindow } from '../types'
+import type { DayKind } from '../types'
 
 const MS_PER_MINUTE = 60_000
 const MINUTES_PER_DAY = 24 * 60
@@ -39,14 +39,6 @@ export function serviceMinutes(nowMinutes: number): number {
 export function dayKindForDate(date: Date): DayKind {
   const weekday = centralParts(date).weekday
   return weekday === 'Sun' || weekday === 'Sat' ? 'weekend' : 'weekday'
-}
-
-export function headwayAt(window: ServiceWindow, minute: number): number {
-  const local = ((minute % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY
-  const band: HeadwayBand =
-    window.headways.find((item) => local >= item.from && local < item.to) ??
-    window.headways[window.headways.length - 1]
-  return band.minutes
 }
 
 export function formatClock(minutes: number, includeSeconds = false): string {
